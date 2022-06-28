@@ -1,20 +1,40 @@
-const config = require('../config.json')
+const express = require('express');
+const https = require('https')
+const config = require('./src/config.json')
+const fs = require('fs')
+const { MessageEmbed } = require('discord.js');
 
-async function initWebhook(client) {
+const embed = {
+	color: 0x0099ff,
+	title: 'Game Data',
+	fields: [
+		{
+			name: 'Player List',
+			value: '',
+		},
+	],
+};
+
+const app = express();
+var embedMessage
+
+app.use(
+    express.urlencoded({
+      extended: true,
+    })
+);
+
+app.use(express.json())
+
+const options = {
+    key: fs.readFileSync('/etc/letsencrypt/live/api.auraxis.co/privkey.pem'),
+    cert: fs.readFileSync('/etc/letsencrypt/live/api.auraxis.co/fullchain.pem')
+};
+
+async function initEmbed(client) {
     const channel = client.channels.cache.get('813260592357703722');
     try {
-        const webhooks = await channel.fetchWebhooks();
-        const webhook = webhooks.find(wh => wh.token);
-
-        if (!webhook) {
-            return console.log('No webhook was found that I can use!');
-        }
-
-        await webhook.send({
-            content: 'Game Data',
-            username: 'game-tracker',
-            embeds: [embed],
-        });
+        embedMessage = await channel.send({embeds : [embed]})
     } catch (error) {
         console.error('Error trying to send a message: ', error);
     }
@@ -24,7 +44,40 @@ module.exports = {
     name: 'ready',
     once: true,
     execute(client) {
-        initWebhook(client)
+        https.createServer(options,app).listen(443,  () => {
+            console.log("Listening")
+        });
+
+        initEmbed(client)
+
+        app.post('/', async function (req, res) {
+            res.writeHead(200);
+            const channel = client.channels.cache.get('813260592357703722');
+            try {
+                let playerString = ""
+                for(var attributename in req.body){
+                    playerString = attributename + '\n'
+                }
+                
+                if(embedMessage) {
+                    const newEmbed = {
+                        color: 0x0099ff,
+                        title: 'Game Data',
+                        fields: [
+                            {
+                                name: 'Player List',
+                                value: playerString,
+                            },
+                        ],
+                    };
+                    embedMessage.edit({ embeds: [newEmbed] });
+                }
+
+            } catch (error) {
+                console.error('Error trying to edit the message: ', error);
+            }
+            res.end();
+        })
         console.log("Bot is ready!")
     }
 }
