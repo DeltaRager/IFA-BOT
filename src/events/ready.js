@@ -1,6 +1,7 @@
 const config = require('../config.json')
 const fs = require('fs')
 const express = require('express');
+const https = require('https')
 
 const { MessageEmbed } = require('discord.js');
 
@@ -19,32 +20,6 @@ app.use(
 );
 
 app.use(express.json())
-
-app.post('/', async function (req, res) {
-    res.writeHead(200);
-    const channel = client.channels.cache.get('813260592357703722');
-    try {
-        const webhooks = await channel.fetchWebhooks();
-        const webhook = webhooks.find(wh => wh.token);
-
-        if (!webhook) {
-            return console.log('No webhook was found that I can use!');
-        }
-        let playerString = ""
-        for(var attributename in req.body){
-            playerString = attributename + '\n'
-        }
-
-        await webhook.editMessage({
-            content: playerString,
-            username: 'game-tracker',
-        });
-    } catch (error) {
-        console.error('Error trying to edit the message: ', error);
-    }
-
-    res.end();
-})
 
 const options = {
     key: fs.readFileSync('/etc/letsencrypt/live/api.auraxis.co/privkey.pem'),
@@ -80,6 +55,32 @@ module.exports = {
             console.log("Listening")
         });
         initWebhook(client)
+
+        app.post('/', async function (req, res) {
+            res.writeHead(200);
+            const channel = client.channels.cache.get('813260592357703722');
+            try {
+                const webhooks = await channel.fetchWebhooks();
+                const webhook = webhooks.find(wh => wh.token);
+        
+                if (!webhook) {
+                    return console.log('No webhook was found that I can use!');
+                }
+                let playerString = ""
+                for(var attributename in req.body){
+                    playerString = attributename + '\n'
+                }
+        
+                await webhook.editMessage({
+                    content: playerString,
+                    username: 'game-tracker',
+                });
+            } catch (error) {
+                console.error('Error trying to edit the message: ', error);
+            }
+        
+            res.end();
+        })
         
         console.log("Bot is ready!")
     }
