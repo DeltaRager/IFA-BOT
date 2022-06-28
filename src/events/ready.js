@@ -1,8 +1,6 @@
-const config = require('../config.json')                                                                                                     test.js                                                                                                                 const https = require('https')
+const config = require('../config.json')
 const fs = require('fs')
-const url = require('url')
 const express = require('express');
-const bp = require('body-parser');
 
 const { MessageEmbed } = require('discord.js');
 
@@ -22,9 +20,8 @@ app.use(
 
 app.use(express.json())
 
-app.post('/', function (req, res) {
+app.post('/', function async (req, res) {
     res.writeHead(200);
-    // console.log(req.body);
     const channel = client.channels.cache.get('813260592357703722');
     try {
         const webhooks = await channel.fetchWebhooks();
@@ -54,6 +51,26 @@ const options = {
     cert: fs.readFileSync('/etc/letsencrypt/live/api.auraxis.co/fullchain.pem')
 };
 
+async function initWebhook(client) {
+    const channel = client.channels.cache.get('813260592357703722');
+    try {
+        const webhooks = await channel.fetchWebhooks();
+        const webhook = webhooks.find(wh => wh.token);
+
+        if (!webhook) {
+            return console.log('No webhook was found that I can use!');
+        }
+
+        await webhook.send({
+            content: 'Game Data',
+            username: 'game-tracker',
+            embeds: [embed],
+        });
+    } catch (error) {
+        console.error('Error trying to send a message: ', error);
+    }
+}
+
 
 module.exports = {
     name: 'ready',
@@ -62,25 +79,8 @@ module.exports = {
         https.createServer(options,app).listen(443,  () => {
             console.log("Listening")
         });
-
-        const channel = client.channels.cache.get('813260592357703722');
-        try {
-            const webhooks = await channel.fetchWebhooks();
-            const webhook = webhooks.find(wh => wh.token);
-
-            if (!webhook) {
-                return console.log('No webhook was found that I can use!');
-            }
-
-            await webhook.send({
-                content: 'Game Data',
-                username: 'game-tracker',
-                embeds: [embed],
-            });
-        } catch (error) {
-            console.error('Error trying to send a message: ', error);
-        }
-
+        initWebhook(client)
+        
         console.log("Bot is ready!")
     }
 }
