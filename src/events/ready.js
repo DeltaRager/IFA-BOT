@@ -20,7 +20,7 @@ app.use(
 
 app.use(express.json())
 
-app.post('/', function async (req, res) {
+app.post('/', async function (req, res) {
     res.writeHead(200);
     const channel = client.channels.cache.get('813260592357703722');
     try {
