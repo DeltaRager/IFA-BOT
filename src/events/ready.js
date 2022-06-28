@@ -56,7 +56,7 @@ module.exports = {
             try {
                 let playerString = ""
                 for(var attributename in req.body){
-                    playerString = attributename + '\n'
+                    playerString = playerString + attributename + '\n'
                 }
                 
                 if(embedMessage) {
