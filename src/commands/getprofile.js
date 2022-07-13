@@ -1,10 +1,9 @@
-const config = require('../config.json');
 const noblox = require('noblox.js');
 const { MessageEmbed } = require('discord.js');
 require('dotenv').config();
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const client = new MongoClient(config.MONGO_URL, { keepAlive: true });
+const client = new MongoClient(process.env.MONGO_URL, { keepAlive: true });
 const playerCollection = client.db('CORE_DATA').collection('PLAYERS')
 
 async function ViewProfile(args, message) {
