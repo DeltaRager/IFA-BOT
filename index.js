@@ -1,9 +1,7 @@
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_WEBHOOKS] });
 
-const express = require('express');
-const https = require('https')
-const config = require('./src/config.json')
+require('dotenv').config();
 const fs = require('fs')
 const path = require('path');
 
@@ -20,4 +18,4 @@ for (const file of eventFiles) {
 	}
 }
 
-client.login(config.TOKEN);
+client.login(process.env.TOKEN);

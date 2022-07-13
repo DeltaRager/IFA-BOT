@@ -7,13 +7,13 @@ const dirPath = path.resolve(__dirname, '../commands');
 const { Client, Collection, Intents } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
-const config = require('../config.json')
+require('dotenv').config();
 client.commands = new Collection();
 const commandFiles = fs.readdirSync(dirPath).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
 	const command = require(`../commands/${file}`);
-	client.commands.set(`${config.PREFIX}${command.name}`, command);
+	client.commands.set(`${process.env.PREFIX}${command.name}`, command);
 }
 module.exports = {
 	name: 'messageCreate',

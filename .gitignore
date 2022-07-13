@@ -3,3 +3,5 @@ bot.py
 requirements.txt
 node_modules
 config.json
+.env
+Procfile
