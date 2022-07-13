@@ -1,7 +1,7 @@
-## SCPF Discord Bot
-This bot provides useful and fun commands for the SCPF's Discords.
+## IFA Discord Bot - Hand of Aurax + CORE integration
+This bot provides commands for IFA's discord servers with ROBLOX and MongoDB integration.
 
-### Environemnt Variables
+### Environment Variables
 - ``PREFIX``: The prefix the bot will respond to following the command name. E.g. ``~ban``
 - ``BOT_TOKEN``: The Discord API token for the bot.
 - ``CONNECTION_STRING``: The MongoDB connection string.
