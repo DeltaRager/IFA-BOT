@@ -49,7 +49,7 @@ async function ViewProfile(args, message) {
 }
 
 module.exports = {
-    name: 'getprofile',
+    name: 'oldprofile',
     once: true,
     execute(args, message) {
         ViewProfile(args, message)

@@ -19,3 +19,7 @@ for (const file of eventFiles) {
 }
 
 client.login(process.env.TOKEN);
+
+// couldnt figure out where the hell to put these to make them work
+// client.user.setUsername('Core of Aurax')
+// client.user.setAvatar('https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905')
