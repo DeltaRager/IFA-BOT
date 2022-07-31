@@ -39,55 +39,67 @@ const barEmojis = {
 
 async function AddXP(args, message) {
     try {
-        let userId = 0
-        
-        if (!args[0]) {
-            
-        } else {
-            if (isNaN(args[0])) {
-                userId = await noblox.getIdFromUsername(args[0])
-            } else {
-                userId = Number(args[0])
-            }
-        }
-
-        if (!userId) {
-            userId = await noblox.getIdFromUsername(message.author.username)
-        }
-
-        let playerInfo = await noblox.getPlayerInfo(userId)
-
-        let findResult = await playerCollection.find({
-            "data.UserId" : userId
+        let verified = false
+        let findResult = await playerCollection.find({ // finds document given player discord id
+            "data.DiscordId" : parseFloat(message.author.id)
         }).toArray();
        
         findResult = findResult[0]
-     
-        let thumbnail_circHeadshot = await noblox.getPlayerThumbnail(userId, 420, "png", true, "Headshot")
-        thumbnail_circHeadshot = thumbnail_circHeadshot[0].imageUrl
+        let template = await playerCollection.find({key : 'NewTemplate'}).toArray()
+        template = template[0]
+
+        let validTypes = []
+        for (var key in template.data.XP) {
+            if (template.data.XP.hasOwnProperty(key)) {           
+                validTypes.push(key)
+            }
+        }
+        // if (!args[0]) {
+            
+        // } else {
+        //     if (isNaN(args[0])) {
+        //         userId = await noblox.getIdFromUsername(args[0])
+        //     } else {
+        //         userId = Number(args[0])
+        //     }
+        // }
+
+        // if (!userId) {
+        //     userId = await noblox.getIdFromUsername(message.author.username)
+        // }
+
+        // let playerInfo = await noblox.getPlayerInfo(userId)
 
         if (!findResult) {
             const noPlayerEmbed = new MessageEmbed()
 			.setColor('#ff0000')
-			.setTitle('User not in CORE database.')
-			.setAuthor({ name: `${args[0]} (${userId})`, url: `https://www.roblox.com/users/${userId}/profile`})
-			.setDescription(`AURCORE did not find a player with that username in the database. Use **#profile** to create a blank CORE Profile for this user.`)
-            .setThumbnail(thumbnail_circHeadshot)
+			.setTitle('Unverified Discord Account')
+			.setAuthor({ name: `${message.author.username}`})
+			.setDescription(`AURCORE doesn't know who you are on ROBLOX! \n\n Your Discord account is not verified to your CORE Profile. Follow the process in **#coreverify** to connect your Discord account to your ROBLOX account in our database. \n\nModifying XP is restricted to Subcenturion+ in IFA.`)
+            .setThumbnail("https://cdn.discordapp.com/avatars/"+message.author.id+"/"+message.author.avatar+".jpeg")
+            .addFields(
+                { name: `Attempted Command:`, value : `#addxp`},
+            )
             .setFooter({ text: 'CORE Midnight | Check out your complete profile in game!', iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
 
 		await message.channel.send({ embeds: [noPlayerEmbed] });
         return
         }
 
+        let userId = findResult.data.UserId
+
+        let thumbnail_circHeadshot = await noblox.getPlayerThumbnail(userId, 420, "png", true, "Headshot")
+        thumbnail_circHeadshot = thumbnail_circHeadshot[0].imageUrl
+
         let member = message.guild.members.cache.get()
 
-        function getCustomDisplayName() {
-            if (findResult.data.CustomDisplayName != "") {
-                return findResult.data.CustomDisplayName
-            } else {
-                return playerInfo.displayName
-            }
-        }
+        // function getCustomDisplayName() {
+        //     if (findResult.data.CustomDisplayName != "") {
+        //         return findResult.data.CustomDisplayName
+        //     } else {
+        //         return playerInfo.displayName
+        //     }
+        // }
 
         let roleIcons = { // icons that correspond to strings of role.name in the combined fleets communications discord
             Emperor: `<:Emperor:996967524199575663>`,
@@ -109,7 +121,6 @@ async function AddXP(args, message) {
         let groupRolesArray = await noblox.getRoles(3115240)
         // console.log(groupRolesArray)
         let groupRole = await noblox.getRankNameInGroup(3115240, userId)
-        let nextRole
 
         // finding user's role in roles list
 
@@ -124,72 +135,155 @@ async function AddXP(args, message) {
         }
 
         let currentRankIndex = get_current_role_index()
-
-        if (currentRankIndex < groupRolesArray.length -1) {
-            nextRole = groupRolesArray[currentRankIndex + 1]
-        } else {
-            nextRole = {name: "You are the highest rank, Chrysalis Arius Trimarch...!"}
-        }
-
-        let currentRoleIcon = roleIcons[groupRole]
-        if (currentRoleIcon == null) {
-            currentRoleIcon = '[-]'
-        }
-        let xpData = findResult.data.XP
-        let xpTotalString = ''
-        for (var key in xpData) {
-            if (xpData.hasOwnProperty(key)) {           
-                xpTotalString += `${key}: ${xpData[key]}\n`
-            }
-        }
-     
-        let xpProgressString = ""
-        let CoreRankObject = await rolesCollection.find({key : 'RankRequirements'}).toArray()
-        let CoreRankRequirements = CoreRankObject[0]['data']
-        function getKeyByValue(object, value) {
-            return Object.keys(object).find(key => object[key] === value);
-        }
-
-        let CurrentRankRequirements = getKeyByValue(CoreRankRequirements, groupRole)
-        let pathway = (findResult.data.Pathway) ? findResult.data.Pathway : "Warfare"
-   
-        console.log(CurrentRankRequirements)
-        if (CurrentRankRequirements) {
-            CurrentRankRequirements = CurrentRankRequirements[pathway]
-        } else {
-            xpProgressString = "Core XP is not a requirement for your next rank."
-        }
-        if (CurrentRankRequirements) {
-            for (var key in CurrentRankRequirements) {
-                if (CurrentRankRequirements.hasOwnProperty(key)) {
-                    let percentage = xpData[key]/CurrentRankRequirements[key]
-                    percentage = Math.ceil(percentage * 10)/10
-                    let num_light = Math.ceil(percentage / 10), num_dark = 10 - num_light
-                    let barTable = (barEmojis[key]) ? barEmojis[key] : barEmojis.General
-                    barString = barTable['Mid']
-                    barString = barTable['Start'] + barTable['Mid'].repeat(num_light - 2) + barTable['Switch'] + `${barEmojis.General.DarkMid}`.repeat(num_dark) + barEmojis.General.DarkEnd
-                    xpProgressString += `${key} XP: ` + barString
-                    xpProgressString += `- ${xpData[key]}/${CurrentRankRequirements[key]} **${percentage}%**\n`
-                }
-            }
-        }
-        const exampleEmbed = new MessageEmbed()
+        let currentRole = groupRolesArray[currentRankIndex]
+        if (currentRole.rank >= 22 && groupRole != '[-] Eternal') { // player is allowed to run this command
+            verified = true
+        } else if (currentRole.Name == '[E] Ensign') {
+            const EnsignEmbed = new MessageEmbed()
 			.setColor('#ff0000')
-			.setTitle('Core XP')
-			.setAuthor({ name: `${findResult.data.Username} (${findResult.key})`, url: `https://www.roblox.com/users/${userId}/profile`})
-			.setDescription(`**${getCustomDisplayName()}**\nRank: ${currentRoleIcon} ${groupRole}\n`)
-			.setThumbnail(thumbnail_circHeadshot)
+			.setTitle('Pending Approval')
+			.setAuthor({ name: `${findResult.data.Username} (${userId})`})
+			.setDescription(`Dear Ensign, \n\nThank you for logging XP! An officer will review your event soon.`)
+            .setThumbnail(thumbnail_circHeadshot)
+            .setFooter({ text: 'CORE Midnight | Check out your complete profile in game!', iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
+
+            await message.channel.send({ embeds: [EnsignEmbed] });
+            return
+        } else {
+            const tooLowRankEmbed = new MessageEmbed()
+			.setColor('#ff0000')
+			.setTitle('Unauthorized User')
+			.setAuthor({ name: `${findResult.data.Username} (${userId})`})
+			.setDescription(`Dear ***${groupRole}...*** \n\nYou are not authorized to change the XP of other users.\n\nWould you like to become an officer or NCO? Check out our [Departments](https://wiki.auraxis.co/wiki/Fleet_Department) page for NCO/officer applications!\n\n**Best wishes,\nAURCORE**\n\nModifying XP is restricted to Subcenturions and Centurion+.\n\nIf you believe this restriction is in error, DM deviaze.`)
+            .setThumbnail(thumbnail_circHeadshot)
             .addFields(
-                { name: `Progress:`, value : `Pathway: ${pathway}\n${xpProgressString} \n\n ***Next Rank: ${nextRole.name}***\n`},
-                { name: `Total XP:`, value : `${xpTotalString}`},
-                // { name: '\u200B', value: ' ' },
-                // { name: 'ARC Stats\nTracks global stats earned with the ARC gun system.', value: `\n${xpTotalString}`, inline: false },
-                // { name: 'Events\nLast 5 events attended.', value: 'Some value here', inline: false },
-                // { name: 'Inline field title', value: 'Some value here', inline: true },
+                { name: `Attempted Command:`, value : `#addxp`},
             )
             .setFooter({ text: 'CORE Midnight | Check out your complete profile in game!', iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
 
-		await message.channel.send({ embeds: [exampleEmbed] });
+		await message.channel.send({ embeds: [tooLowRankEmbed] });
+        return
+        }
+
+        if (verified) {
+            let errored = false, errorText = ""
+            let xpTypes = {
+                // type : amount
+            }
+            let users = []
+            let currentRoleIcon = roleIcons[groupRole]
+            if (currentRoleIcon == null) {
+                currentRoleIcon = '[-]'
+            }
+            for (let i = 0; i < args.length; i++) {
+                let regex = /:/
+                if (regex.test(args[i])) {
+                    let type = args[i].split(':')
+                    if (type[0] && type[1]) {
+                        if (validTypes.includes(type[0])) {
+                             xpTypes[type[0]] = parseFloat(type[1])
+                        } else {
+                            errored = true
+                            errorText = `${type[0]} is not a valid XP Type.`
+                        }
+                    } else {
+                        errored = true
+                        errorText = 'Invalid XP Types. Correct format is Type:amount'
+                    }
+                } else {
+                    users.push(args[i])
+                }
+            }
+
+            let failedUsers = []
+            let succeededUsers = []
+
+            for (let i = 0; i < users.length; i++) {
+                let targetUserId = await noblox.getIdFromUsername(users[i])
+                if (targetUserId) {
+                    let targetRole = await noblox.getRankNameInGroup(3115240, targetUserId)
+                    if (targetRole != 'Guest') {
+                        let targetProfile = await playerCollection.find({'data.UserId' : targetUserId}).toArray()
+                        targetProfile = targetProfile[0]
+                        for (var key in xpTypes) {
+                            if (xpTypes.hasOwnProperty(key)) {
+                                // targetProfile.data.XP = {key: targetProfile.data.XP[key] + xpTypes[key]}
+                                targetProfile.data.XP[`${key}`] = targetProfile.data.XP[key] + xpTypes[key]
+                                // xpTotalString += `${key}: ${xpData[key]}\n`
+                            }
+                        }
+                        try {
+                            // playerCollection.insertOne(targetProfile) // update target profile???
+                            // playerCollection.replaceOne({'data.UserId': targetUserId}, targetProfile).then((ans) => {
+                            //     succeededUsers.push(`${targetProfile.data.Username}`)
+                            //     console.log(`successfully replaced ${targetProfile.data.Username} (${targetUserId})`)
+                            // })
+                            await playerCollection.replaceOne({'data.UserId': targetUserId}, targetProfile)
+                            succeededUsers.push(`${targetProfile.data.Username}`)
+                            console.log(`successfully replaced ${targetProfile.data.Username} (${targetUserId})`)                      
+                        } catch {
+                            console.log("failed")
+                            errored = true
+                        }
+                       
+                    } else {
+                        failedUsers.push(users[i] + ' is not in IFA.')
+                    }
+                } else {
+                    failedUsers.push(users[i] + ' does not have a ROBLOX account.')
+                }
+            }
+            if (!errored) {
+                let succeededString = succeededUsers.join(`\n`)
+                if (succeededString == '') {
+                    succeededString = "No users were given XP successfully."
+                }
+                let failedString = failedUsers.join(`\n`)
+                if (failedString == '') {
+                    failedString = "All users were awarded XP successfully!"
+                }
+                let xpTypeString = ''
+                for (var key in xpTypes) {
+                    if (xpTypes.hasOwnProperty(key)) {           
+                        xpTypeString += `**${key}:** ${xpTypes[key]}\n`
+                    }
+                }
+                const exampleEmbed = new MessageEmbed()
+                .setColor('#ff0000')
+                .setTitle('Success - XP Added')
+                .setAuthor({ name: `${findResult.data.Username} (${findResult.key})`, url: `https://www.roblox.com/users/${userId}/profile`})
+                .setDescription(`Rank: ${currentRoleIcon} ${groupRole} ${findResult.data.Username} has successfully added XP to the following users:`)
+                .setThumbnail(thumbnail_circHeadshot)
+                .addFields(
+                    { name: `XP Types`, value : `${xpTypeString}`},
+                    { name: 'Succeeded Users', value: `${succeededString}`, inline: true },
+                    { name: 'Failed Users', value: `${failedString}`, inline: true },
+                    // { name: 'Events\nLast 5 events attended.', value: 'Some value here', inline: false },
+                    // { name: 'Inline field title', value: 'Some value here', inline: true },
+                )
+                .setFooter({ text: 'CORE Midnight | Check out your complete profile in game!', iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
+    
+            await message.channel.send({ embeds: [exampleEmbed] });
+            } else {
+                const erroredEmbed = new MessageEmbed()
+                .setColor('#ff0000')
+                .setTitle('Error - XP Not Added')
+                .setAuthor({ name: `${findResult.data.Username} (${findResult.key})`, url: `https://www.roblox.com/users/${userId}/profile`})
+                .setDescription(`Rank: ${currentRoleIcon} ${groupRole} ${findResult.data.Username}`)
+                .setThumbnail(thumbnail_circHeadshot)
+                .addFields(
+                    { name: `Error Message`, value : `${errorText}`},
+                    // { name: 'Users', value: `\n text if work`, inline: false },
+                    // { name: 'Events\nLast 5 events attended.', value: 'Some value here', inline: false },
+                    // { name: 'Inline field title', value: 'Some value here', inline: true },
+                )
+                .setFooter({ text: 'CORE Midnight | Check out your complete profile in game!', iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
+    
+            await message.channel.send({ embeds: [erroredEmbed] });
+            }
+            
+        }
+
     } catch (err) {
         console.log(err)
     }
