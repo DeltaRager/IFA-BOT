@@ -34,6 +34,37 @@ async function ViewProfile(args, message) {
         let thumbnail_circHeadshot = await noblox.getPlayerThumbnail(userId, 420, "png", true, "Headshot")
         thumbnail_circHeadshot = thumbnail_circHeadshot[0].imageUrl
 
+        if (!findResult) {
+            const noPlayerEmbed = new MessageEmbed()
+                .setColor('#ff0000')
+                .setTitle(`Creating new profile for ${args[0]}`)
+                .setAuthor({ name: `${args[0]} (${userId})`, url: `https://www.roblox.com/users/${userId}/profile`})
+                .setDescription(`AURCORE is currently making a new profile for this user. Try this again in a few seconds!`)
+                .setThumbnail(thumbnail_circHeadshot)
+                .setFooter({ text: 'CORE Midnight | Check out your complete profile in game!', iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
+
+		    await message.channel.send({ embeds: [noPlayerEmbed] });
+
+            let template = await playerCollection.find({key : 'NewTemplate'}).toArray()
+            template = template[0]
+            template['key'] = `${userId}`
+            template['_id'] = null
+            template['data']['Username'] = args[0]
+            template['data']['UserId'] = userId
+            playerCollection.insertOne(template)
+        return
+        }
+
+        let discordString = ""
+        if (findResult.data.DiscordId) {
+            if (findResult.data.DiscordId != 1000000000000007) {
+                // idStr = `${findResult.data.DiscordId}`
+                discordString = `${findResult.data.DiscordId}`
+            } else {
+                discordString = 'User not verified with CORE Midnight'
+            }
+        }
+
         let statString = ''
         for (var key in findResult.data.Stats) {
             if (findResult.data.Stats.hasOwnProperty(key)) {           
@@ -150,7 +181,7 @@ async function ViewProfile(args, message) {
         description += `\n<:robloxiconwhite:996960311536013392> [Profile](https://www.roblox.com/users/${userId}/profile)\n`
 
         // @deltarager todo: add discord bot verification to be added to description string
-        description += `<:discordiconwhite:996961107338084412> User not verified with CORE Midnight\n\n**Rank:** ${currentRoleIcon} ***${groupRole}***` // havent done verification system yet
+        description += `<:discordiconwhite:996961107338084412> ${discordString} \n\n**Rank:** ${currentRoleIcon} ***${groupRole}***` // havent done verification system yet
         // Role icon will work fine on the main IFA discord
 
         const userEmbed = new MessageEmbed()
@@ -160,7 +191,7 @@ async function ViewProfile(args, message) {
 			.setDescription(`${description}`)
 			.setThumbnail(thumbnail_circHeadshot)
             .addFields(
-                { name: `Next Rank: ${nextRole.name}`, value: `\nProgress: 🟩 🟩 🟩 🟩 🟩 ⬜ ⬜ ⬜ ⬜ ⬜   **50.0%**` },
+                { name: `Next Rank: ${nextRole.name}`, value: `\nProgress: \nUse **#xp** to check your XP` },
                 // { name: '\u200B', value: ' ' },
                 { name: 'Divisions', value: `${divisionsString}` }, 
                 // { name: 'ARC Stats\nTracks global stats earned with the ARC gun system.', value: `\n${statString}`, inline: false },
@@ -241,6 +272,7 @@ async function ViewProfile(args, message) {
         });
 
         collector.on('end', collected => {
+            profileMessageReference.edit({components : []})
             console.log(`Collected ${collected.size} interactions.`);
         });
 
