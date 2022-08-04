@@ -16,6 +16,8 @@
     "md5": "^2.3.0",
     "mongodb": "^4.7.0",
     "mongoose": "^6.4.4",
+    "mwn": "^1.11.4",
+    "needle": "^3.1.0",
     "noblox.js": "^4.13.1",
     "quickchart-js": "^3.0.1"
   }

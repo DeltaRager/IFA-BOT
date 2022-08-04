@@ -145,7 +145,7 @@ async function AddXP(args, message) {
 			.setAuthor({ name: `${findResult.data.Username} (${userId})`})
 			.setDescription(`Dear Ensign, \n\nThank you for logging XP! An officer will review your event soon.`)
             .setThumbnail(thumbnail_circHeadshot)
-            .setFooter({ text: 'CORE Midnight | Check out your complete profile in game!', iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
+            .setFooter({ text: `#addxp <robloxusername>x inf <XPType:amount> x inf | XP Type(s) are SentenceCase! - AURCORE :)\n Example: #addxp deviaze Konvetur Combat:12 Leadership:5`, iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
 
             await message.channel.send({ embeds: [EnsignEmbed] });
             return
@@ -208,7 +208,11 @@ async function AddXP(args, message) {
                         for (var key in xpTypes) {
                             if (xpTypes.hasOwnProperty(key)) {
                                 // targetProfile.data.XP = {key: targetProfile.data.XP[key] + xpTypes[key]}
-                                targetProfile.data.XP[`${key}`] = targetProfile.data.XP[key] + xpTypes[key]
+                                if (targetProfile.data.XP[`${key}`]) {
+                                    targetProfile.data.XP[`${key}`] = targetProfile.data.XP[key] + xpTypes[key]
+                                } else {
+                                    targetProfile.data.XP[`${key}`] = xpTypes[key]
+                                }
                                 // xpTotalString += `${key}: ${xpData[key]}\n`
                             }
                         }
@@ -261,7 +265,7 @@ async function AddXP(args, message) {
                     // { name: 'Events\nLast 5 events attended.', value: 'Some value here', inline: false },
                     // { name: 'Inline field title', value: 'Some value here', inline: true },
                 )
-                .setFooter({ text: 'CORE Midnight | Check out your complete profile in game!', iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
+                .setFooter({ text: `Example: #addxp deviaze Konvetur Combat:12 Leadership:5 | Powered by AURCORE :)`, iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
     
             await message.channel.send({ embeds: [exampleEmbed] });
             } else {
@@ -285,6 +289,18 @@ async function AddXP(args, message) {
         }
 
     } catch (err) {
+        const noPlayerEmbed = new MessageEmbed()
+			.setColor('#ff0000')
+			.setTitle('XP - #addxp Options')
+			.setAuthor({ name: `${message.author.username}`})
+			.setDescription(`Command restricted to Subcenturion, Centurion+`)
+            .setThumbnail("https://cdn.discordapp.com/avatars/"+message.author.id+"/"+message.author.avatar+".jpeg")
+            .addFields(
+                { name: `Usage:`, value : `\`\`\`#addxp <robloxusername> <XPType:amount>\n\nExample:\n#addxp Colony:2 Konvetur deviaze Combat:5 Leadership:2 Citizenship:5\`\`\`\nOrder does not matter, you can add as many players & XP Types as you want.\n\n https://wiki.auraxis.co/wiki/Core_XP`},
+            )
+            .setFooter({ text: 'CORE Midnight | Check out your complete profile in game!', iconURL: 'https://static.miraheze.org/auraxiswiki/c/c9/Low_res_interim.png?20220629161905' });
+
+		await message.channel.send({ embeds: [noPlayerEmbed] });
         console.log(err)
     }
 }
